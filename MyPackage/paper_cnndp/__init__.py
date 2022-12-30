@@ -1,2 +1,4 @@
-import pathlib,os,sys
-sys.path.append(pathlib.Path(os.getcwd()).parent) # Use MyPackage/*
+if __name__=='__main__':
+    from . import NetC
+    from . import NetAG
+    from . import NetDP

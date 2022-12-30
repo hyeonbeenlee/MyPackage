@@ -1,7 +1,7 @@
 import torch
 
-def MSE(self, x):
+def MSE(x):
     return torch.mean(torch.square(x))
 
-def MAE(self, x):
+def MAE(x):
     return torch.mean(torch.abs(x))
