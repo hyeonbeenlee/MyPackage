@@ -1,5 +1,7 @@
 import os
 import re
+import torch
+import pandas as pd
 
 
 def Sec2Time(seconds):
@@ -21,3 +23,10 @@ def CreateDir(DirectoryPath):
 def NumFromStr(str):
     list_num = re.findall(r'\d+', str)
     return list_num
+
+def df2tensor(df: pd.DataFrame):
+    return torch.FloatTensor(df.to_numpy())
+
+def Conv1D_Lout(Lin, padding, dilation, kernel_size, stride):
+    Lout = int((Lin + 2 * padding - dilation * (kernel_size - 1) - 1) / stride)+1
+    return Lout
