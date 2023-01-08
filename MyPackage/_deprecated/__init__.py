@@ -8,4 +8,3 @@ from . import ModuleRK45
 from . import RDBatchSolver
 
 __all__=[s for s in dir()]
-print(dir())

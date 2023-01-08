@@ -1,11 +1,11 @@
-from _deprecated.ModuleDNN import DNN
+from .._deprecated.ModuleDNN import DNN
 import torch
 import numpy as np
 from sklearn.metrics import r2_score
 from torch.utils.data import TensorDataset, DataLoader
-from CommonVariables import *
+# from .CommonVariables import *
 import time, os
-from _deprecated import DataProcessing as DP
+from .._deprecated import DataProcessing as DP
 import pandas as pd
 import warnings
 

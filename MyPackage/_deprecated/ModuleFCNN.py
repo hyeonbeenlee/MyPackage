@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import gc
 from sklearn.metrics import r2_score as R2
 import matplotlib.pyplot as plt
-import DataProcessing as DP
+from . import DataProcessing as DP
 
 
 

@@ -1,9 +1,9 @@
-from ModuleFCNN import FCNN
+from .ModuleFCNN import FCNN
 import pandas as pd
 import torch
 import os
 import gc
-import DataProcessing as DP
+from . import DataProcessing as DP
 from torch.utils.data import TensorDataset,DataLoader
 import time
 from sklearn.metrics import r2_score as R2
