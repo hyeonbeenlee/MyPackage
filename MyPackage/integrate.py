@@ -29,7 +29,7 @@ def RK5(func_XDDot, h, t, Y):
 
 def rkint(func_XDDot, X_0: np.array, XDot_0: np.array, t_array: np.array, method: str = 'rk4'):
     """
-    Applies Runge-Kutta numerical integration on multi-dimensional state vector.
+    Applies second-order Runge-Kutta numerical integration on multi-dimensional state vector.
     @param func_XDDot: func_XDDot(t, X,XDot): returns XDDot (1D array)
     @type func_XDDot: function
     @param X_0: Initial values
@@ -97,7 +97,7 @@ def PolyFitCustomized(x, y, deg_start, deg_end):
 
 def rkint_detrended(func_XDDot, X_0, XDot_0, t_array, method: str = 'rk4', order: int = 4):
     """
-    Applies Runge-Kutta numerical integration on multi-dimensional state vector with detrending algorithm from:
+    Applies second-order Runge-Kutta numerical integration on multi-dimensional state vector with detrending algorithm from:
     Pan, C., Zhang, R., Luo, H., & Shen, H. (2016).
     Baseline correction of vibration acceleration signals with inconsistent initial velocity and displacement.
     Advances in Mechanical Engineering, 8(10).
