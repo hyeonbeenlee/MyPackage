@@ -1,55 +1,72 @@
 import numpy as np
 import scipy
+from scipy.interpolate import Akima1DInterpolator as akispl
 
-def Grad(func_ddot, t, Y):  # dY
-    x = Y[0]
-    xDot = Y[1]
-    
-    dY = np.empty(2)
-    dY[0] = xDot
-    dY[1] = func_ddot(t)  # Acceleration spline function
+def GradVec(func_XDDot, t, Y):  # dY
+    statedim = int(len(Y) / 2)
+    X = Y[:statedim]
+    XDot = Y[statedim:]
+    dY = np.concatenate([XDot, func_XDDot(t, X, XDot)], axis=0)
     return dY
 
-def RK4(func_ddot, h, t, Y):
-    k1 = Grad(func_ddot, t, Y)
-    k2 = Grad(func_ddot, t + h / 2, Y + h * k1 / 2)
-    k3 = Grad(func_ddot, t + h / 2, Y + h * k2 / 2)
-    k4 = Grad(func_ddot, t + h, Y + h * k3)
+def RK4(func_XDDot, h, t, Y):
+    k1 = GradVec(func_XDDot, t, Y)
+    k2 = GradVec(func_XDDot, t + h / 2, Y + h * k1 / 2)
+    k3 = GradVec(func_XDDot, t + h / 2, Y + h * k2 / 2)
+    k4 = GradVec(func_XDDot, t + h, Y + h * k3)
     dY = (k1 / 6 + k2 / 3 + k3 / 3 + k4 / 6)
     return dY
 
-def RK5(func_ddot, h, t, Y):
-    k1 = Grad(func_ddot, t, Y)
-    k2 = Grad(func_ddot, t + h / 4, Y + h * k1 / 4)
-    k3 = Grad(func_ddot, t + h / 4, Y + h * k1 / 8 + h * k2 / 8)
-    k4 = Grad(func_ddot, t + h / 2, Y - h * k2 / 2 + h * k3)
-    k5 = Grad(func_ddot, t + 3 * h / 4, Y + 3 * h * k1 / 16 + 9 * h * k4 / 16)
-    k6 = Grad(func_ddot, t + h, Y - 3 * h * k1 / 7 + 2 * h * k2 / 7 + 12 * h * k3 / 7 - 12 * h * k4 / 7 + 8 * h * k5 / 7)
+def RK5(func_XDDot, h, t, Y):
+    k1 = GradVec(func_XDDot, t, Y)
+    k2 = GradVec(func_XDDot, t + h / 4, Y + h * k1 / 4)
+    k3 = GradVec(func_XDDot, t + h / 4, Y + h * k1 / 8 + h * k2 / 8)
+    k4 = GradVec(func_XDDot, t + h / 2, Y - h * k2 / 2 + h * k3)
+    k5 = GradVec(func_XDDot, t + 3 * h / 4, Y + 3 * h * k1 / 16 + 9 * h * k4 / 16)
+    k6 = GradVec(func_XDDot, t + h, Y - 3 * h * k1 / 7 + 2 * h * k2 / 7 + 12 * h * k3 / 7 - 12 * h * k4 / 7 + 8 * h * k5 / 7)
     dY = (7 * k1 + 32 * k3 + 12 * k4 + 32 * k5 + 7 * k6) / 90
     return dY
 
-def Integrate(func_ddot, t_0: float = 0, t_end: float = 1, h: float = 1e-2, v0: float = 0, p0: float = 0, method: str = 'rk4'):
-    # Initial conditions
-    t = t_0
-    steps = int((t_end - t_0) / h)
-    Y = np.array([p0, v0])
-    dY = Grad(func_ddot, t, Y)
+def rkint(func_XDDot, X_0: np.array, XDot_0: np.array, t_array: np.array, method: str = 'rk4'):
+    """
+    Applies Runge-Kutta numerical integration on multi-dimensional state vector.
+    @param func_XDDot: func_XDDot(t, X,XDot): returns XDDot (1D array)
+    @type func_XDDot: function
+    @param X_0: Initial values
+    @type X_0: 1D array or list
+    @param XDot_0:
+    @type XDot_0:
+    @param t_array: Discrete time steps
+    @type t_array: 1D array or list
+    @param method: Supports 'rk4' or 'rk5'
+    @type method: str
+    @return: X, XDot, XDDot
+    @rtype: 2D array
+    """
+    t_array = t_array.flatten()
+    X_0 = X_0.flatten()
+    XDot_0 = XDot_0.flatten()
     
-    # RK integrate
-    rk_time = np.zeros(steps + 1)
-    rk_Y = np.zeros((steps + 1, 2))  # pos and vel
+    t = t_array[0]
+    h = t_array[1] - t_array[0]
+    steps = len(t_array) - 1
+    Y = np.concatenate([X_0, XDot_0], axis=0)  # State vector [diff0, diff1]
+    dY = np.concatenate([XDot_0, func_XDDot(t, X_0, XDot_0)], axis=0)
+    
+    rk_Y = np.zeros((steps + 1, len(X_0) * 2))  # pos and vel
     rk_dY = np.zeros_like(rk_Y)  # update gradients
+    
     for idx in range(steps + 1):
         # save
-        rk_time[idx] = t
+        t_array[idx] = t
         rk_Y[idx] = Y
         rk_dY[idx] = dY
         
         # calculate
         if method.lower() == 'rk4':
-            dY = RK4(func_ddot, h, t, Y)
+            dY = RK4(func_XDDot, h, t, Y)
         elif method.lower() == 'rk5':
-            dY = RK5(func_ddot, h, t, Y)
+            dY = RK5(func_XDDot, h, t, Y)
         
         # update
         Y = Y + h * dY
@@ -59,7 +76,10 @@ def Integrate(func_ddot, t_0: float = 0, t_end: float = 1, h: float = 1e-2, v0: 
         if (idx + 1) % 10000 == 0:
             print(f"Solving t={t:.5f} ({idx + 1}/{steps + 1})")
     
-    return rk_time, rk_Y, rk_dY
+    X = rk_Y[:, :len(X_0)]
+    XDot = rk_Y[:, len(X_0):]
+    XDDot = rk_dY[:, len(X_0):]
+    return X, XDot, XDDot
 
 def PolyFitCustomized(x, y, deg_start, deg_end):
     A = np.zeros((deg_end - deg_start + 1, deg_end - deg_start + 1))
@@ -75,63 +95,78 @@ def PolyFitCustomized(x, y, deg_start, deg_end):
         coefficients = np.concatenate((np.zeros(deg_start), coefficients), axis=0)
     return coefficients
 
-def Integrate_Detrend(func_ddot_uncorrected,
-        t_0=0,
-        t_end=1,
-        h=1e-2,
-        v0_assumed=0,
-        p0_assumed=0,
-        integration_method: str = 'rk4',
-        correction_order: int = 4):
+def rkint_detrended(func_XDDot, X_0, XDot_0, t_array, method: str = 'rk4', order: int = 4):
+    """
+    Applies Runge-Kutta numerical integration on multi-dimensional state vector with detrending algorithm from:
+    Pan, C., Zhang, R., Luo, H., & Shen, H. (2016).
+    Baseline correction of vibration acceleration signals with inconsistent initial velocity and displacement.
+    Advances in Mechanical Engineering, 8(10).
+    
+    @param func_XDDot: func_XDDot(t, X,XDot): returns XDDot (1D array)
+    @type func_XDDot: function
+    @param X_0: Initial values
+    @type X_0: 1D array or list
+    @param XDot_0:
+    @type XDot_0:
+    @param t_array: Discrete time steps
+    @type t_array: 1D array or list
+    @param method: Supports 'rk4' or 'rk5'
+    @type method: str
+    :param order: Detrending correction order
+    :type order: int
+    :return: X, XDot, XDDot
+    :rtype: each 2D array
+    """
+    t_array = t_array.flatten()
+    X_0 = X_0.flatten()
+    XDot_0 = XDot_0.flatten()
+    
+    statedim = int(X_0.shape[0])
+    t_0 = t_array[0]
+    t_end = t_array[-1]
+    h = t_array[1] - t_array[0]
     # Save uncorrected integration
-    rk_time_uncorrected, rk_Y_uncorrected, rk_dY_uncorrected = Integrate(func_ddot_uncorrected,
-                                                                         t_0=t_0,
-                                                                         t_end=t_end,
-                                                                         h=h,
-                                                                         v0=v0_assumed,
-                                                                         p0=p0_assumed,
-                                                                         method=integration_method)
+    X_uncorrected, XDot_uncorrected, XDDot_uncorrected = rkint(func_XDDot, X_0, XDot_0, t_array, method=method)
     # STEP 1
     # Correct acceleration with velocity
-    velocity_uncorrected = rk_Y_uncorrected[:, 1]
-    acc_corrective1 = np.zeros(rk_time_uncorrected.shape)  # basis
-    
-    coefficients = PolyFitCustomized(rk_time_uncorrected, velocity_uncorrected, 1, correction_order + 1)  # init value=0
-    for order, coeff in enumerate(coefficients):
-        if coeff == 0:  # 상수차수의 미분항 무시 (=0)
-            continue
-        else:
-            acc_corrective1 += order * coeff * rk_time_uncorrected ** (order - 1)
-    acceleration_corrected1 = func_ddot_uncorrected(rk_time_uncorrected) - acc_corrective1
-    akispl_ddot_corrected1 = scipy.interpolate.Akima1DInterpolator(rk_time_uncorrected, acceleration_corrected1)
+    funclist_XDDot_corrected1 = []
+    for i in range(statedim):
+        xdot_uncorrected = XDot_uncorrected[:, i]
+        xddot_corrective1 = np.zeros_like(t_array)  # basis
+        coefficients = PolyFitCustomized(t_array, xdot_uncorrected, 1, order + 1)  # init value=0
+        for order, coeff in enumerate(coefficients):
+            if coeff == 0:  # 상수차수의 미분항 무시 (=0)
+                continue
+            else:
+                xddot_corrective1 += order * coeff * t_array ** (order - 1)
+        xddot_corrected1 = XDDot_uncorrected[:, i] - xddot_corrective1
+        funclist_XDDot_corrected1.append(akispl(t_array, xddot_corrected1))
+    def func_XDDot_corrected1(t, X, XDot):
+        XDDot = np.zeros_like(X)
+        for j in range(len(X)):
+            XDDot[j] = funclist_XDDot_corrected1[j](t)
+        return XDDot
     # Integrate velocity corrected acceleration
-    rk_time_corrected1, rk_Y_corrected1, rk_dY_corrected1 = Integrate(akispl_ddot_corrected1,
-                                                                      t_end=t_end,
-                                                                      h=h,
-                                                                      t_0=t_0,
-                                                                      v0=v0_assumed,
-                                                                      p0=p0_assumed,
-                                                                      method=integration_method)
+    X_corrected1, XDot_corrected1, XDDot_corrected1 = rkint(func_XDDot_corrected1, X_0, XDot_0, t_array, method=method)
     
     # STEP 2
     # Correct acceleration with displacement from velocity-corrected acceleration
-    acc_corrective2 = np.zeros(rk_time_corrected1.shape)
-    displacement_corrected1 = rk_Y_corrected1[:, 0]
-    coefficients = PolyFitCustomized(rk_time_corrected1, displacement_corrected1, 2, correction_order + 2)
-    for order, coeff in enumerate(coefficients):
-        if coeff == 0:
-            continue
-        else:
-            acc_corrective2 += order * (order - 1) * coeff * rk_time_corrected1 ** (order - 2)
-    acceleration_corrected2 = acceleration_corrected1 - acc_corrective2
-    akispl_ddot_corrected2 = scipy.interpolate.Akima1DInterpolator(rk_time_corrected1, acceleration_corrected2)
+    funclist_XDDot_corrected2 = []
+    for i in range(statedim):
+        xddot_corrective2 = np.zeros_like(t_array)
+        coefficients = PolyFitCustomized(t_array, X_corrected1[:, i], 2, order + 2)
+        for order, coeff in enumerate(coefficients):
+            if coeff == 0:
+                continue
+            else:
+                xddot_corrective2 += order * (order - 1) * coeff * t_array ** (order - 2)
+        xddot_corrected2 = XDDot_corrected1[:,i] - xddot_corrective2
+        funclist_XDDot_corrected2.append(scipy.interpolate.Akima1DInterpolator(t_array, xddot_corrected2))
+    def func_XDDot_corrected2(t, X, XDot):
+        XDDot = np.zeros_like(X)
+        for j in range(len(X)):
+            XDDot[j] = funclist_XDDot_corrected2[j](t)
+        return XDDot
     # Integrate displacement corrected acceleration
-    rk_time_corrected2, rk_Y_corrected2, rk_dY_corrected2 = Integrate(akispl_ddot_corrected2,
-                                                                      t_end=t_end,
-                                                                      h=h,
-                                                                      t_0=t_0,
-                                                                      v0=v0_assumed,
-                                                                      p0=p0_assumed,
-                                                                      method=integration_method)
-    
-    return rk_time_corrected2, rk_Y_corrected2, rk_dY_corrected2
+    X_corrected2, XDot_corrected2, XDDot_corrected2 = rkint(func_XDDot_corrected2, X_0, XDot_0, t_array, method=method)
+    return X_corrected2, XDot_corrected2, XDDot_corrected2

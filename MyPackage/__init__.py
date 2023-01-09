@@ -2,6 +2,7 @@ from . import _deprecated
 from . import dnn
 from . import paper_cnndp
 from . import projects
+from . import _integrate
 from . import integrate
 from . import interpolate
 from . import metrics
