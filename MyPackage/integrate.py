@@ -95,7 +95,7 @@ def PolyFitCustomized(x, y, deg_start, deg_end):
         coefficients = np.concatenate((np.zeros(deg_start), coefficients), axis=0)
     return coefficients
 
-def rkint_detrended(func_XDDot, X_0, XDot_0, t_array, method: str = 'rk4', order: int = 4):
+def rkint_detrended(func_XDDot, X_0:np.array, XDot_0:np.array, t_array:np.array, method: str = 'rk4', order: int = 4):
     """
     Applies second-order Runge-Kutta numerical integration on multi-dimensional state vector with detrending algorithm from:
     Pan, C., Zhang, R., Luo, H., & Shen, H. (2016).
