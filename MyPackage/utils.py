@@ -27,6 +27,11 @@ def NumFromStr(str):
 def df2tensor(df: pd.DataFrame):
     return torch.FloatTensor(df.to_numpy())
 
+def path2filename(path:str):
+    filefullname=os.path.basename(path)
+    filename='.'.join(filefullname.split('.')[:-1])
+    return filename
+
 def Conv1D_Lout(Lin, padding, dilation, kernel_size, stride):
     Lout = int((Lin + 2 * padding - dilation * (kernel_size - 1) - 1) / stride)+1
     return Lout

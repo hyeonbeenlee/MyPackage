@@ -17,10 +17,8 @@ def FFT(data_1D, timestep):
     return Freq, Amp
 
 def PCA(data_2D: np.array, n_components: int):
-    if type(data_2D) == pd.DataFrame:
-        raise TypeError("Use pd.DataFrame input.")
     if n_components > data_2D.shape[1]:
-        raise UserWarning("n_components cannot exceed the number of features of data array.")
+        raise UserWarning(f"n_components cannot exceed the number of features ({data_2D.shape[1]}) of data array.")
     # Standardize
     mean = data_2D.mean(axis=0)
     std = data_2D.std(axis=0)
