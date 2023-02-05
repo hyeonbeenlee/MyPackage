@@ -16,7 +16,89 @@ def FFT(data_1D, timestep):
     Amp = np.abs(np.fft.rfft(data_1D, n=n_samples, norm='forward')) * 2  # Drop imaginary and double amplitude
     return Freq, Amp
 
+def FFT1(data, t: np.array = None, return_complex: bool = False):
+    """
+    @param data: Row-> temporal samples of signal, Column-> Different signals
+    @type data: array_like (2D expected)
+    @param t: time vector. Defaults to None. If given, returns frequency vector.
+    @type t: array_like (1D expected)
+    @return: Double sided 1D Fourier transformation with frequency vector if t is given.
+    @rtype: array_like (2D)
+    """
+    n_samples = data.shape[0]
+    # Compute FFT along temporal axis
+    a_fft = np.fft.fft(data, axis=0)
+    a_fft *= 2 / n_samples  # Normalize
+    phase_angles = np.angle(a_fft) * 180 / np.pi
+    if not return_complex:
+        a_fft = np.abs(a_fft)
+    # if time vector given
+    if t is not None:
+        t = t.flatten()
+        Fs = 1 / (t[1] - t[0])  # Should be uniformly sampled in time...
+        f_fft = np.arange(n_samples) * (Fs / n_samples)
+        f_fft = f_fft[:n_samples // 2 + 1]
+        f_fft_ = -np.flip(f_fft)  # Negative frequency terms
+        f_fft = np.concatenate([f_fft,f_fft_], axis=0)[:n_samples]
+        return a_fft, f_fft
+    else:
+        return a_fft
+
+def IFFT1(data_fft1):
+    """
+    @param data_fft1: output of FFT1
+    @type data_fft1: array_like
+    @return: Inverse Fourier transformation of input
+    @rtype: np.array
+    """
+    n_samples = data_fft1.shape[0]
+    return np.fft.ifft(data_fft1, axis=0) / 2 * n_samples  # Divide by 2 for IFFT
+
+def RFFT1(data, t: np.array = None, return_complex: bool = False):
+    """
+    @param data: REAL Row-> temporal samples of signal, Column-> Different signals
+    @type data: array_like (2D expected)
+    @param t: time vector. Defaults to None. If given, returns frequency vector.
+    @type t: array_like (1D expected)
+    @return: Double sided 1D Fourier transformation with frequency vector if t is given.
+    @rtype: array_like (2D)
+    """
+    n_samples = data.shape[0]
+    # Compute FFT along temporal axis
+    a_fft = np.fft.rfft(data, axis=0)
+    a_fft *= 2 / n_samples  # Normalize
+    phase_angles = np.angle(a_fft) * 180 / np.pi
+    if not return_complex:
+        a_fft = np.abs(a_fft)
+    # if time vector given
+    if t is not None:
+        t = t.flatten()
+        Fs = 1 / (t[1] - t[0])  # Should be uniformly sampled in time...
+        f_fft = np.arange(n_samples) * (Fs / n_samples)  # Normalize
+        f_fft = f_fft[:n_samples // 2 + 1]  # One-sided
+        return a_fft, f_fft
+    else:
+        return a_fft
+
+def IRFFT1(data_rfft1):
+    """
+    @param data_rfft1: output of RFFT1
+    @type data_rfft1: array_like
+    @return: REAL Inverse Fourier transformation of input
+    @rtype: np.array
+    """
+    n_samples = data_rfft1.shape[0]
+    return np.fft.irfft(data_rfft1, axis=0) * n_samples  # Do not divide by 2 for IRFFT
+
 def PCA(data_2D: np.array, n_components: int):
+    """
+    @param data_2D: Row->samples, Column->features
+    @type data_2D: array_like
+    @param n_components: Number of features to preserve
+    @type n_components: int
+    @return: reduced_data, restored_data, singular_values
+    @rtype: array_like, array_like, array_1D
+    """
     if n_components > data_2D.shape[1]:
         raise UserWarning(f"n_components cannot exceed the number of features ({data_2D.shape[1]}) of data array.")
     # Standardize
@@ -30,5 +112,5 @@ def PCA(data_2D: np.array, n_components: int):
     vh_t = vh[:n_components, :]
     reduced_data = u_t @ s_t
     restored_data = (u_t @ s_t @ vh_t) * std + mean
-    singular_values=s.diagonal()
+    singular_values = s.diagonal()
     return reduced_data, restored_data, singular_values
