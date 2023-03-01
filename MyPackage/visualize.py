@@ -9,10 +9,10 @@ def PlotTemplate(fontsize=15):
     plt.rcParams['axes.grid'] = True
     plt.rcParams['axes3d.grid'] = True
     plt.rcParams['axes.xmargin']=0
-    plt.rcParams['axes.labelsize'] = 1.5 * fontsize
-    plt.rcParams['axes.titlesize'] = 2 * fontsize
-    plt.rcParams['xtick.labelsize'] = 0.7 * fontsize
-    plt.rcParams['ytick.labelsize'] = 0.7 * fontsize
+    plt.rcParams['axes.labelsize'] = 1.2 * fontsize
+    plt.rcParams['axes.titlesize'] = 1.8 * fontsize
+    plt.rcParams['xtick.labelsize'] = 0.8 * fontsize
+    plt.rcParams['ytick.labelsize'] = 0.8 * fontsize
 
 def SaveAllActiveFigures(Prefix: str = "Figure",subFolder:str=None):
     if not os.path.exists("Figures"):

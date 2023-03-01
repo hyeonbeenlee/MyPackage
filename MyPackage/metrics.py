@@ -12,8 +12,11 @@ def RelativeMSE(exptime, exp, simtime, sim):
     return err
 
 def RelativeRMSErr(label, prediction):
-    label = label.numpy()
-    prediction = prediction.numpy()
+    try:
+        label = label.numpy()
+        pred = pred.numpy()
+    except AttributeError:
+        pass
     label = label - label.mean()
     prediction = prediction - prediction.mean()
     rms_label = np.sqrt(np.mean(np.square(label)))
@@ -28,8 +31,11 @@ def MeanValueErr(exp, sim):
     return err
 
 def CrossCorrelate(label, pred, labeltime=None, predtime=None):
-    label = label.numpy()
-    pred = pred.numpy()
+    try:
+        label = label.numpy()
+        pred = pred.numpy()
+    except AttributeError:
+        pass
     
     if label.shape[0] != pred.shape[0]:
         label_interp = akispl(labeltime, label)
@@ -42,8 +48,11 @@ def CrossCorrelate(label, pred, labeltime=None, predtime=None):
     return np.abs(coeff[0, 1])  # exp and sim
 
 def PeakToPeakErr(label, pred):
-    label = label.numpy()
-    pred = pred.numpy()
+    try:
+        label = label.numpy()
+        pred = pred.numpy()
+    except AttributeError:
+        pass
     label_err = np.max(label) - np.min(label)
     pred_err = np.max(pred) - np.min(pred)
     err = np.abs(label_err - pred_err) / label_err * 100

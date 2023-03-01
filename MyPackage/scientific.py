@@ -1,6 +1,20 @@
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt
+from scipy.interpolate import Akima1DInterpolator as akispl
+from scipy.stats import spearmanr
+
+def corrcoef_async(time_ref, vec1, time2, vec2):
+    interp = akispl(time2, vec2)
+    new_vec2 = interp(time_ref)
+    corr = np.corrcoef(np.stack([vec1, new_vec2], axis=1), rowvar=False)
+    return np.abs(corr[0,1])
+
+def spearmanr_async(time_ref, vec1, time2, vec2):
+    interp = akispl(time2, vec2)
+    new_vec2 = interp(time_ref)
+    corr = spearmanr(np.stack([vec1, new_vec2], axis=1)).statistic
+    return np.abs(corr)
 
 def FiltButterworth(data_1darray, cutoff, timestep, order, mode: str = 'low'):
     f_sampling = 1 / timestep
@@ -39,7 +53,7 @@ def FFT1(data, t: np.array = None, return_complex: bool = False):
         f_fft = np.arange(n_samples) * (Fs / n_samples)
         f_fft = f_fft[:n_samples // 2 + 1]
         f_fft_ = -np.flip(f_fft)  # Negative frequency terms
-        f_fft = np.concatenate([f_fft,f_fft_], axis=0)[:n_samples]
+        f_fft = np.concatenate([f_fft, f_fft_], axis=0)[:n_samples]
         return a_fft, f_fft
     else:
         return a_fft
